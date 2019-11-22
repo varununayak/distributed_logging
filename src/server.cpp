@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
             cout << "Server got connection from " << inet_ntoa(clientAddress.sin_addr) << 
             " Port: " << ntohs(clientAddress.sin_port) << endl;
         }
-        // This part onwards has to go into a thread/threadpool
+        // This part onwards has to go into a thread/threadpool 
         while (true) {
             char buffer[256];
             int n = read(clientSockfd, buffer, 255);
