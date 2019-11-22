@@ -98,8 +98,7 @@ int main(int argc, char *argv[])
     }
 
     // Create socket
-    int sockfd, portNumber;
-    portNumber = atoi(argv[2]);
+    int sockfd;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         cout << "Error while opening socket.";
@@ -120,6 +119,7 @@ int main(int argc, char *argv[])
     bcopy((char *)server->h_addr,
           (char *)&serverAddress.sin_addr.s_addr,
           server->h_length);
+    const int portNumber = atoi(argv[2]);
     serverAddress.sin_port = htons(portNumber);
     if (connect(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0) {
         cout << "Error connecting to server" << endl;
