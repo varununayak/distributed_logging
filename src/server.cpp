@@ -14,13 +14,27 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <thread>
+#include <pthread.h>
+#include <mutex>
+#include "threadpool.h"
 
 using namespace std;
 
-void error(const char *msg)
+void messageReader(int clientSockfd)
 {
-    perror(msg);
-    exit(1);
+    while (true) {
+        char buffer[512];
+        const int n = read(clientSockfd, buffer, 511);
+        if (n == 0) {
+            cout << "Connection closed" << endl;
+            break;
+        } else if (n < 0) {
+            cout << "Error reading from socket" << endl;
+            break;
+        }  
+        printf("%s", buffer);
+    }
 }
 
 int main(int argc, char *argv[])
@@ -57,6 +71,7 @@ int main(int argc, char *argv[])
     clientLength = sizeof(clientAddress);
 
     int clientSockfd;
+    ThreadPool pool(4);
     while (true) {
         cout << "Waiting for connections..." << endl;
         clientSockfd = accept(sockfd,
@@ -68,15 +83,8 @@ int main(int argc, char *argv[])
             cout << "Server got connection from " << inet_ntoa(clientAddress.sin_addr) << 
             " Port: " << ntohs(clientAddress.sin_port) << endl;
         }
-        // This part onwards has to go into a thread/threadpool 
-        while (true) {
-            char buffer[256];
-            int n = read(clientSockfd, buffer, 255);
-            if (n == 0) continue;
-            if (n < 0)
-                error("ERROR reading from socket");
-            printf("%s", buffer);
-        }
+        // This part onwards has to go into a thread/threadpool
+        pool.enqueue([clientSockfd] {messageReader(clientSockfd);});
     }
 
     close(clientSockfd);

@@ -26,7 +26,8 @@ using namespace std;
 
 static mutex threadLock;
 
-const std::string currentDateTime() {
+const std::string currentDateTime()
+{
     time_t now = time(0);
     struct tm tstruct;
     char buf[80];
@@ -85,9 +86,9 @@ void dynamicsThread(int sockfd, string hostName)
     }
 }
 
-void controlsThread(int sockfd)
-{
-}
+// void controlsThread(int sockfd)
+// {
+// }
 
 int main(int argc, char *argv[])
 {
@@ -130,11 +131,11 @@ int main(int argc, char *argv[])
     // Create threads
     thread kinThread(kinematicsThread, sockfd, hostName);
     thread dynThread(dynamicsThread, sockfd, hostName);
-    thread ctrlThread(controlsThread, sockfd);
+    // thread ctrlThread(controlsThread, sockfd);
 
     kinThread.join();
     dynThread.join();
-    ctrlThread.join();
+    // ctrlThread.join();
 
     close(sockfd);
     return 0;
