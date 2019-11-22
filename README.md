@@ -10,6 +10,7 @@ You will need:
  * CMake 3.1+ installed (on a Mac, run `brew install cmake`)
 
 ### Building The Project
-
+'''
 mkdir build && cd build
-cmake .. && make && make install
+cmake .. && make
+'''
