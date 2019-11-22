@@ -35,6 +35,7 @@ void messageReader(int clientSockfd)
         }  
         printf("%s", buffer);
     }
+    close(clientSockfd);
 }
 
 int main(int argc, char *argv[])
@@ -87,7 +88,6 @@ int main(int argc, char *argv[])
         pool.enqueue([clientSockfd] {messageReader(clientSockfd);});
     }
 
-    close(clientSockfd);
     close(sockfd);
     return 0;
 }
