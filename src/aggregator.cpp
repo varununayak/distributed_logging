@@ -51,8 +51,6 @@ void messageReader(int aggregatorSockfd)
 {
     while (true) {
         char buffer[512];
-        // TODO(vn): This lock may not be necessary
-        threadLock.lock(); 
         const int n = read(aggregatorSockfd, buffer, 512);
         if (n == 0) {
             cout << "Connection closed" << endl;
@@ -63,7 +61,6 @@ void messageReader(int aggregatorSockfd)
         }  
         cout << buffer;
         outputfile << buffer;
-        threadLock.unlock();
     }
     close(aggregatorSockfd);
 }
@@ -72,7 +69,7 @@ int main(int argc, char *argv[])
 {
     // Get port from user
     if (argc < 2) {
-        cout << "Usage: ./aggregator <port>" << std::endl;
+        cout << "Usage: ./aggregator <serverport>" << std::endl;
         return 0;
     }
 

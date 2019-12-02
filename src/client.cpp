@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <unistd.h>
+#include <chrono>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -45,11 +46,11 @@ const std::string currentDateTime()
     return buf;
 }
 
-void kinematicsThread(int sockfd, string hostName)
+void kinematicsThread(string hostName)
 {
     while (true) {
         // Wait for some seconds between each log
-        sleep(2);
+        this_thread::sleep_for(chrono::milliseconds(1500));
         // Get thread ID
         thread::id threadID = this_thread::get_id();
         // Get process ID
@@ -70,11 +71,11 @@ void kinematicsThread(int sockfd, string hostName)
     }
 }
 
-void dynamicsThread(int sockfd, string hostName)
+void dynamicsThread(string hostName)
 {
     while (true) {
         // Wait for some seconds between each log
-        sleep(2);
+        this_thread::sleep_for(chrono::milliseconds(1600));
         // Get thread ID
         thread::id threadID = this_thread::get_id();
         // Get process ID
@@ -95,11 +96,11 @@ void dynamicsThread(int sockfd, string hostName)
     }
 }
 
-void controlsThread(int sockfd, string hostName)
+void controlsThread(string hostName)
 {
         while (true) {
         // Wait for some seconds between each log
-        sleep(2);
+        this_thread::sleep_for(chrono::milliseconds(1700));
         // Get thread ID
         thread::id threadID = this_thread::get_id();
         // Get process ID
@@ -124,7 +125,7 @@ int main(int argc, char *argv[])
 {
     // Get hostname and port from user
     if (argc < 3) {
-        cout << "Usage: ./client <hostname> <port>" << std::endl;
+        cout << "Usage: ./client <hostname> <clientport>" << std::endl;
         return 0;
     }
 
@@ -165,9 +166,9 @@ int main(int argc, char *argv[])
 
     string hostName = string(argv[1]);
     // Create threads
-    thread kinThread(kinematicsThread, sockfd, hostName);
-    thread dynThread(dynamicsThread, sockfd, hostName);
-    thread ctrlThread(controlsThread, sockfd, hostName);
+    thread kinThread(kinematicsThread, hostName);
+    thread dynThread(dynamicsThread, hostName);
+    thread ctrlThread(controlsThread, hostName);
 
     kinThread.join();
     dynThread.join();
