@@ -25,7 +25,7 @@ using namespace std;
 static mutex threadLock;
 static int sockfd;
 
-void sigHandler(int s){
+static void sigHandler(int s){
     cout << "Caught signal to exit" << endl;
     close(sockfd);
     exit(1);
@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
     socklen_t clientLength;
     clientLength = sizeof(clientAddress);
 
+    // Handler for clean exit
     struct sigaction sigIntHandler;
     sigIntHandler.sa_handler = sigHandler;
     sigemptyset(&sigIntHandler.sa_mask);
@@ -106,5 +107,6 @@ int main(int argc, char *argv[])
         // Use threadpool to handle clients
         pool.enqueue([clientSockfd] {messageReader(clientSockfd);});
     }
+
     return 0;
 }

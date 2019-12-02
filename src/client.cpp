@@ -16,6 +16,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <string>
+#include <signal.h>
 #include <thread>
 #include <pthread.h>
 #include <sstream>
@@ -25,6 +26,14 @@
 using namespace std;
 
 static mutex threadLock;
+static int sockfd;
+
+
+static void sigHandler(int s){
+    cout << "Caught signal to exit" << endl;
+    close(sockfd);
+    exit(1);
+}
 
 const std::string currentDateTime()
 {
@@ -120,7 +129,6 @@ int main(int argc, char *argv[])
     }
 
     // Create socket
-    int sockfd;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         cout << "Error while opening socket.";
@@ -148,6 +156,13 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    // Handler for clean exit
+    struct sigaction sigIntHandler;
+    sigIntHandler.sa_handler = sigHandler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+    sigaction(SIGINT, &sigIntHandler, NULL);
+
     string hostName = string(argv[1]);
     // Create threads
     thread kinThread(kinematicsThread, sockfd, hostName);
@@ -158,6 +173,5 @@ int main(int argc, char *argv[])
     dynThread.join();
     ctrlThread.join();
 
-    close(sockfd);
     return 0;
 }
