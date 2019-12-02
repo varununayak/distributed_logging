@@ -47,20 +47,24 @@ const std::string currentDateTime()
     return buf;
 }
 
-void messageReader(int aggregatorSockfd)
+void serverHandler(int aggregatorSockfd)
 {
     while (true) {
         char buffer[512];
-        const int n = read(aggregatorSockfd, buffer, 512);
+        threadLock.lock();
+        const int n = recv(aggregatorSockfd, buffer, 512, MSG_WAITALL);
+        threadLock.unlock();
         if (n == 0) {
             cout << "Connection closed" << endl;
             break;
         } else if (n < 0) {
             cout << "Error reading from socket" << endl;
             break;
-        }  
+        }
+        threadLock.lock();
         cout << buffer;
         outputfile << buffer;
+        threadLock.unlock();
     }
     close(aggregatorSockfd);
 }
@@ -121,7 +125,7 @@ int main(int argc, char *argv[])
             " Port: " << ntohs(serverAddress.sin_port) << endl;
         }
         // Use threadpool to handle servers
-        pool.enqueue([serverSockfd] {messageReader(serverSockfd);});
+        pool.enqueue([serverSockfd] {serverHandler(serverSockfd);});
     }
 
     return 0;

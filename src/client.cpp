@@ -23,6 +23,7 @@
 #include <sstream>
 #include <mutex>
 #include <ctime>
+#include "threadpool.h"
 
 using namespace std;
 
@@ -50,7 +51,7 @@ void kinematicsThread(string hostName)
 {
     while (true) {
         // Wait for some seconds between each log
-        this_thread::sleep_for(chrono::milliseconds(1500));
+        this_thread::sleep_for(chrono::milliseconds(2000));
         // Get thread ID
         thread::id threadID = this_thread::get_id();
         // Get process ID
@@ -75,7 +76,7 @@ void dynamicsThread(string hostName)
 {
     while (true) {
         // Wait for some seconds between each log
-        this_thread::sleep_for(chrono::milliseconds(1600));
+        this_thread::sleep_for(chrono::milliseconds(2000));
         // Get thread ID
         thread::id threadID = this_thread::get_id();
         // Get process ID
@@ -100,7 +101,7 @@ void controlsThread(string hostName)
 {
         while (true) {
         // Wait for some seconds between each log
-        this_thread::sleep_for(chrono::milliseconds(1700));
+        this_thread::sleep_for(chrono::milliseconds(2000));
         // Get thread ID
         thread::id threadID = this_thread::get_id();
         // Get process ID
@@ -166,13 +167,10 @@ int main(int argc, char *argv[])
 
     string hostName = string(argv[1]);
     // Create threads
-    thread kinThread(kinematicsThread, hostName);
-    thread dynThread(dynamicsThread, hostName);
-    thread ctrlThread(controlsThread, hostName);
-
-    kinThread.join();
-    dynThread.join();
-    ctrlThread.join();
+    ThreadPool pool(3);
+    pool.enqueue([hostName] {kinematicsThread(hostName);});
+    pool.enqueue([hostName] {dynamicsThread(hostName);});
+    pool.enqueue([hostName] {controlsThread(hostName);});
 
     return 0;
 }

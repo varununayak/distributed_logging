@@ -37,11 +37,13 @@ static void sigHandler(int s){
     exit(1);
 }
 
-void messageReader(int clientSockfd)
+void clientHandler(int clientSockfd)
 {
     while (true) {
         char buffer[512];
-        const int nR = read(clientSockfd, buffer, 512);
+        threadLock.lock();
+        const int nR = recv(clientSockfd, buffer, 512, MSG_WAITALL);
+        threadLock.unlock();
         if (nR == 0) {
             cout << "Connection closed" << endl;
             break;
@@ -128,7 +130,7 @@ int main(int argc, char *argv[])
     sigaction(SIGINT, &sigIntHandler, NULL);
 
     int clientSockfd;
-    ThreadPool pool(10);
+    ThreadPool pool(4);
     while (true) {
         cout << "Waiting for connections..." << endl;
         clientSockfd = accept(sockfdC,
@@ -141,7 +143,7 @@ int main(int argc, char *argv[])
             " Port: " << ntohs(clientAddress.sin_port) << endl;
         }
         // Use threadpool to handle clients
-        pool.enqueue([clientSockfd] {messageReader(clientSockfd);});
+        pool.enqueue([clientSockfd] {clientHandler(clientSockfd);});
     }
 
     return 0;
