@@ -1,6 +1,9 @@
 /*
     server.cpp
 
+    Reads from clients and pushes information
+    to the aggregator.
+
     @author: Varun Nayak
     @date: November 2019
  */
