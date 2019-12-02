@@ -21,11 +21,15 @@
 
 using namespace std;
 
+static mutex threadLock;
+
 void messageReader(int clientSockfd)
 {
     while (true) {
         char buffer[512];
-        const int n = read(clientSockfd, buffer, 511);
+        // TODO(vn): This lock may not be necessary
+        threadLock.lock(); 
+        const int n = read(clientSockfd, buffer, 512);
         if (n == 0) {
             cout << "Connection closed" << endl;
             break;
@@ -33,7 +37,8 @@ void messageReader(int clientSockfd)
             cout << "Error reading from socket" << endl;
             break;
         }  
-        printf("%s", buffer);
+        cout << buffer; // WRITE TO AGGREGATOR SOCKET HERE
+        threadLock.unlock();
     }
     close(clientSockfd);
 }
@@ -84,7 +89,7 @@ int main(int argc, char *argv[])
             cout << "Server got connection from " << inet_ntoa(clientAddress.sin_addr) << 
             " Port: " << ntohs(clientAddress.sin_port) << endl;
         }
-        // This part onwards has to go into a thread/threadpool
+        // Use threadpool to handle clients
         pool.enqueue([clientSockfd] {messageReader(clientSockfd);});
     }
 

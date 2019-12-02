@@ -39,7 +39,7 @@ const std::string currentDateTime()
 void kinematicsThread(int sockfd, string hostName)
 {
     while (true) {
-        // Wait for 2 seconds between each log
+        // Wait for some seconds between each log
         sleep(2);
         // Get thread ID
         thread::id threadID = this_thread::get_id();
@@ -47,8 +47,8 @@ void kinematicsThread(int sockfd, string hostName)
         pid_t pid = getpid();
         stringstream message;
         string logMessage = "<Message From Kinematics Thread>";
-        threadLock.lock();
         // Get current time and date
+        threadLock.lock();
         string dateTime = currentDateTime();
         message << hostName <<" | " << pid << " | " << threadID << " | " << dateTime << " | DEBUG | " << logMessage << endl;
         string messageFromClient = message.str();
@@ -64,17 +64,17 @@ void kinematicsThread(int sockfd, string hostName)
 void dynamicsThread(int sockfd, string hostName)
 {
     while (true) {
-        // Wait for 2 seconds between each log
+        // Wait for some seconds between each log
         sleep(2);
         // Get thread ID
         thread::id threadID = this_thread::get_id();
         // Get process ID
         pid_t pid = getpid();
-        threadLock.lock();
         // Get current time and date
-        string dateTime = currentDateTime();
         stringstream message;
         string logMessage = "<Message From Dynamics Thread>";
+        threadLock.lock();
+        string dateTime = currentDateTime();
         message << hostName <<" | " << pid << " | " << threadID << " | " << dateTime << " | DEBUG | " << logMessage << endl;
         string messageFromClient = message.str();
         const int n = write(sockfd, messageFromClient.c_str(), strlen(messageFromClient.c_str()));
@@ -86,9 +86,30 @@ void dynamicsThread(int sockfd, string hostName)
     }
 }
 
-// void controlsThread(int sockfd)
-// {
-// }
+void controlsThread(int sockfd, string hostName)
+{
+        while (true) {
+        // Wait for some seconds between each log
+        sleep(2);
+        // Get thread ID
+        thread::id threadID = this_thread::get_id();
+        // Get process ID
+        pid_t pid = getpid();
+        // Get current time and date
+        stringstream message;
+        string logMessage = "<Message From Controls Thread>";
+        threadLock.lock();
+        string dateTime = currentDateTime();
+        message << hostName <<" | " << pid << " | " << threadID << " | " << dateTime << " | DEBUG | " << logMessage << endl;
+        string messageFromClient = message.str();
+        const int n = write(sockfd, messageFromClient.c_str(), strlen(messageFromClient.c_str()));
+        threadLock.unlock();
+        if (n < 0) {
+            cout << "Error writing to socket." << endl;
+            break;
+        }
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -131,11 +152,11 @@ int main(int argc, char *argv[])
     // Create threads
     thread kinThread(kinematicsThread, sockfd, hostName);
     thread dynThread(dynamicsThread, sockfd, hostName);
-    // thread ctrlThread(controlsThread, sockfd);
+    thread ctrlThread(controlsThread, sockfd, hostName);
 
     kinThread.join();
     dynThread.join();
-    // ctrlThread.join();
+    ctrlThread.join();
 
     close(sockfd);
     return 0;
