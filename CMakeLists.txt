@@ -10,3 +10,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
 add_executable (server src/server.cpp)
 add_executable (client src/client.cpp)
+add_executable (aggregator src/aggregator.cpp)

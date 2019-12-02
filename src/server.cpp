@@ -18,10 +18,18 @@
 #include <pthread.h>
 #include <mutex>
 #include "threadpool.h"
+#include <signal.h>
 
 using namespace std;
 
 static mutex threadLock;
+static int sockfd;
+
+void sigHandler(int s){
+    cout << "Caught signal to exit" << endl;
+    close(sockfd);
+    exit(1);
+}
 
 void messageReader(int clientSockfd)
 {
@@ -52,7 +60,7 @@ int main(int argc, char *argv[])
     }
 
     // Create a socket
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         cout << "Error opening socket" << endl;
         return 0;
@@ -76,6 +84,12 @@ int main(int argc, char *argv[])
     socklen_t clientLength;
     clientLength = sizeof(clientAddress);
 
+    struct sigaction sigIntHandler;
+    sigIntHandler.sa_handler = sigHandler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+    sigaction(SIGINT, &sigIntHandler, NULL);
+
     int clientSockfd;
     ThreadPool pool(4);
     while (true) {
@@ -92,7 +106,5 @@ int main(int argc, char *argv[])
         // Use threadpool to handle clients
         pool.enqueue([clientSockfd] {messageReader(clientSockfd);});
     }
-
-    close(sockfd);
     return 0;
 }
