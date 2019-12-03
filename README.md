@@ -24,6 +24,8 @@ You will need:
 
  * A modern C/C++ compiler (eg: gcc)
  * CMake 3.1+ installed (on a Mac, run `brew install cmake`)
+ 
+Uses threadpool library from https://github.com/progschj/ThreadPool
 
 ### Building The Project
 ```
@@ -39,3 +41,7 @@ In a terminal:
 ./client localhost 12345        # to run a client
 ```
 Note that the port numbers for individual connections must match.
+
+### Known Bug
+
+When multiple clients connect to a server, the log messages are sometimes not read from the buffer correctly.
