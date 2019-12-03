@@ -7,43 +7,42 @@
     @author: Varun Nayak
     @date: November 2019
  */
-#include <stdio.h>
-#include <iostream>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <thread>
-#include <netdb.h>
-#include <pthread.h>
-#include <mutex>
 #include "threadpool.h"
-#include <signal.h>
+#include "utils.h"
 
 using namespace std;
 
-static mutex threadLock;
-static int sockfdC;
-static int sockfdS;
+static mutex socketLock;    // thread safety on socket
+static int sockfdC;         // client side socket
+static int sockfdA;         // aggregator side socket
 
+/* sigHandler
+
+    This function handles the exit signal 
+    i.e. Ctrl + C from the console to perform
+    a clean exit of the program.
+
+    @param: int s           // signal id int
+*/
 static void sigHandler(int s){
-    cout << "Caught signal to exit" << endl;
+    cout << "Caught signal " << s << " to exit" << endl;
     close(sockfdC);
-    close(sockfdS);
+    close(sockfdA);
     exit(1);
 }
 
-void clientHandler(int clientSockfd)
+/*  clientHandler
+    
+    Threadworker that handles each client connected to the server.
+    Reads from the client and writes to the aggregators.
+
+    @param: int clientSockfd        // client socket
+*/
+static void clientHandler(int clientSockfd)
 {
     while (true) {
         char buffer[512];
-        threadLock.lock();
         const int nR = recv(clientSockfd, buffer, 512, MSG_WAITALL);
-        threadLock.unlock();
         if (nR == 0) {
             cout << "Connection closed" << endl;
             break;
@@ -51,7 +50,9 @@ void clientHandler(int clientSockfd)
             cout << "Error reading from socket" << endl;
             break;
         } 
-        const int nW = write(sockfdS, buffer, sizeof(buffer));
+        socketLock.lock();
+        const int nW = send(sockfdA, buffer, sizeof(buffer), MSG_WAITALL);
+        socketLock.unlock();
         if (nW < 0) {
             cout << "Error writing to socket." << endl;
             break;
@@ -71,14 +72,14 @@ int main(int argc, char *argv[])
     // Create a socket for client side
     sockfdC = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfdC < 0) {
-        cout << "Error opening socket" << endl;
+        cerr << "Error opening socket" << endl;
         return 0;
     }
 
     // Create a socket for aggregator side
-    sockfdS = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfdS < 0) {
-        cout << "Error opening socket" << endl;
+    sockfdA = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfdA < 0) {
+        cerr << "Error opening socket" << endl;
         return 0;
     }
 
@@ -86,33 +87,19 @@ int main(int argc, char *argv[])
     struct hostent *aggregator;
     aggregator = gethostbyname(argv[2]);
     if (aggregator == NULL) {
-        cout << "Error, no such host" << endl;
+        cerr << "Error, no such host" << endl;
         return 0;
     }
 
-    // Bind socket to port
-    struct sockaddr_in serverAddress;
-    bzero((char *)&serverAddress, sizeof(serverAddress));
+    // Bind socket to port on client side
     const int portNumberC = atoi(argv[1]);
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
-    serverAddress.sin_port = htons(portNumberC);
-    if (bind(sockfdC, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0) {
-        cout << "Error on binding." << endl;
+    if(!bindSocketToPort(sockfdC, portNumberC)) {
         return 0;
     }
-
+    
     // Connect to aggregator
-    struct sockaddr_in aggregatorAddress;
-    bzero((char *)&aggregatorAddress, sizeof(aggregatorAddress));
-    aggregatorAddress.sin_family = AF_INET;
-    bcopy((char *)aggregator->h_addr,
-          (char *)&aggregatorAddress.sin_addr.s_addr,
-          aggregator->h_length);
     const int portNumberS = atoi(argv[3]);
-    aggregatorAddress.sin_port = htons(portNumberS);
-    if (connect(sockfdS, (struct sockaddr *)&aggregatorAddress, sizeof(aggregatorAddress)) < 0) {
-        cout << "Error connecting to aggregator" << endl;
+    if(!connectToServer(sockfdA, portNumberS, aggregator)){
         return 0;
     }
 
@@ -123,20 +110,16 @@ int main(int argc, char *argv[])
     clientLength = sizeof(clientAddress);
 
     // Handler for clean exit
-    struct sigaction sigIntHandler;
-    sigIntHandler.sa_handler = sigHandler;
-    sigemptyset(&sigIntHandler.sa_mask);
-    sigIntHandler.sa_flags = 0;
-    sigaction(SIGINT, &sigIntHandler, NULL);
+    createSigHandler(sigHandler);
 
     int clientSockfd;
-    ThreadPool pool(4);
+    ThreadPool pool(MAX_NUM_HANDLER_THREADS);
     while (true) {
         cout << "Waiting for connections..." << endl;
         clientSockfd = accept(sockfdC,
                        (struct sockaddr *)&clientAddress, &clientLength);
         if (clientSockfd < 0) {
-            cout << "Error on accepting connection." << endl;
+            cerr << "Error on accepting connection." << endl;
             continue;
         } else {
             cout << "Server got connection from " << inet_ntoa(clientAddress.sin_addr) << 

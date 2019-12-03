@@ -7,37 +7,24 @@
     @author: Varun Nayak
     @date: December 2019
  */
-#include <stdio.h>
-#include <iostream>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <thread>
-#include <pthread.h>
-#include <mutex>
 #include "threadpool.h"
-#include <signal.h>
-#include <fstream>
+#include "utils.h"
 
 using namespace std;
 
-static mutex threadLock;
-static int sockfd;
-static ofstream outputfile;
+static mutex outputFileLock;        // thread safety for output file
+static int sockfd;                  // socket   
+static ofstream outputfile;         // file to which we output logs
 
-static void sigHandler(int s){
-    cout << "Caught signal to exit" << endl;
-    close(sockfd);
-    outputfile.close();
-    exit(1);
-}
+/*  currentDateTime()
 
-const std::string currentDateTime()
+    This function returns a string representing
+    the current date and time in a specific 
+    format.
+
+    @return: string buf     // date and time string
+*/
+const string currentDateTime()
 {
     time_t now = time(0);
     struct tm tstruct;
@@ -47,13 +34,33 @@ const std::string currentDateTime()
     return buf;
 }
 
-void serverHandler(int aggregatorSockfd)
+/* sigHandler
+
+    This function handles the exit signal 
+    i.e. Ctrl + C from the console to perform
+    a clean exit of the program.
+
+    @param: int s           // signal id int
+*/
+static void sigHandler(int s){
+    cout << "Caught signal " << s << " to exit" << endl;
+    close(sockfd);
+    outputfile.close();
+    exit(1);
+}
+
+/*  serverHandler
+    
+    Threadworker that handles each server connected to the aggregator.
+    Reads from the servers and prints out the log info, writes to the file.
+
+    @param: int clientSockfd        // client socket
+*/
+void serverHandler(int serverSockfd)
 {
     while (true) {
         char buffer[512];
-        threadLock.lock();
-        const int n = recv(aggregatorSockfd, buffer, 512, MSG_WAITALL);
-        threadLock.unlock();
+        const int n = recv(serverSockfd, buffer, 512, MSG_WAITALL);
         if (n == 0) {
             cout << "Connection closed" << endl;
             break;
@@ -61,12 +68,12 @@ void serverHandler(int aggregatorSockfd)
             cout << "Error reading from socket" << endl;
             break;
         }
-        threadLock.lock();
         cout << buffer;
+        outputFileLock.lock();
         outputfile << buffer;
-        threadLock.unlock();
+        outputFileLock.unlock();
     }
-    close(aggregatorSockfd);
+    close(serverSockfd);
 }
 
 int main(int argc, char *argv[])
@@ -85,14 +92,8 @@ int main(int argc, char *argv[])
     }
 
     // Bind socket to port
-    struct sockaddr_in aggregatorAddress;
-    bzero((char *)&aggregatorAddress, sizeof(aggregatorAddress));
     const int portNumber = atoi(argv[1]);
-    aggregatorAddress.sin_family = AF_INET;
-    aggregatorAddress.sin_addr.s_addr = INADDR_ANY;
-    aggregatorAddress.sin_port = htons(portNumber);
-    if (bind(sockfd, (struct sockaddr *)&aggregatorAddress, sizeof(aggregatorAddress)) < 0) {
-        cout << "Error on binding." << endl;
+    if(!bindSocketToPort(sockfd, portNumber)) {
         return 0;
     }
 
@@ -103,16 +104,13 @@ int main(int argc, char *argv[])
     serverLength = sizeof(serverAddress);
 
     // Handler for clean exit
-    struct sigaction sigIntHandler;
-    sigIntHandler.sa_handler = sigHandler;
-    sigemptyset(&sigIntHandler.sa_mask);
-    sigIntHandler.sa_flags = 0;
-    sigaction(SIGINT, &sigIntHandler, NULL);
+    createSigHandler(sigHandler);
 
+    // We output logs to this file
     outputfile.open("../logs/logs" + currentDateTime() + ".txt");
 
     int serverSockfd;
-    ThreadPool pool(4);
+    ThreadPool pool(MAX_NUM_HANDLER_THREADS);
     while (true) {
         cout << "Waiting for connections..." << endl;
         serverSockfd = accept(sockfd,
