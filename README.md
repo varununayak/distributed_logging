@@ -36,7 +36,7 @@ cmake .. && make
 
 In a terminal:
 ```
-./aggregator 12347              # to run a aggregator
+./aggregator 12346              # to run a aggregator
 ./server 12346 localhost 12345  # to run a server
 ./client localhost 12345        # to run a client
 ```
