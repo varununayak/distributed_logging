@@ -42,7 +42,7 @@ const string currentDateTime()
 
     @param: int s           // signal id int
 */
-static void sigHandler(int s){
+void sigHandler(int s){
     cout << "Caught signal " << s << " to exit" << endl;
     close(sockfd);
     outputfile.close();

@@ -44,7 +44,7 @@ const string currentDateTime()
 
     @param: int s           // signal id int
 */
-static void sigHandler(int s){
+void sigHandler(int s){
     cout << "Caught signal " << s << " to exit" << endl;
     close(sockfd);
     exit(1);
@@ -63,7 +63,7 @@ void kinematicsThread(const string hostName)
 {
     while (true) {
         // Wait for some seconds between each log
-        this_thread::sleep_for(chrono::milliseconds(2000));
+        this_thread::sleep_for(chrono::milliseconds(1500));
         // Get thread ID
         thread::id threadID = this_thread::get_id();
         // Get process ID
@@ -76,7 +76,7 @@ void kinematicsThread(const string hostName)
         message << hostName <<" | " << pid << " | " << threadID << " | " << dateTime << " | DEBUG | " << logMessage << flush <<  endl;
         string messageFromClient = message.str();
         // Write to socket
-        const int n = write(sockfd, messageFromClient.c_str(), strlen(messageFromClient.c_str()));
+        const int n = send(sockfd, messageFromClient.c_str(), strlen(messageFromClient.c_str()), MSG_WAITFORONE);
         socketLock.unlock();
         if (n < 0) {
             cerr << "Error writing to socket." << endl;
@@ -111,7 +111,7 @@ void dynamicsThread(const string hostName)
         message << hostName <<" | " << pid << " | " << threadID << " | " << dateTime << " | DEBUG | " << logMessage << flush << endl;
         string messageFromClient = message.str();
         // Write to socket
-        const int n = write(sockfd, messageFromClient.c_str(), strlen(messageFromClient.c_str()));
+        const int n = send(sockfd, messageFromClient.c_str(), strlen(messageFromClient.c_str()), MSG_WAITFORONE);
         socketLock.unlock();
         if (n < 0) {
             cerr << "Error writing to socket." << endl;
@@ -133,7 +133,7 @@ void controlsThread(const string hostName)
 {
         while (true) {
         // Wait for some seconds between each log
-        this_thread::sleep_for(chrono::milliseconds(2000));
+        this_thread::sleep_for(chrono::milliseconds(2300));
         // Get thread ID
         thread::id threadID = this_thread::get_id();
         // Get process ID
@@ -146,7 +146,7 @@ void controlsThread(const string hostName)
         message << hostName <<" | " << pid << " | " << threadID << " | " << dateTime << " | DEBUG | " << logMessage << flush << endl;
         string messageFromClient = message.str();
         // Write to socket
-        const int n = write(sockfd, messageFromClient.c_str(), strlen(messageFromClient.c_str()));
+        const int n = send(sockfd, messageFromClient.c_str(), strlen(messageFromClient.c_str()), MSG_WAITFORONE);
         socketLock.unlock();
         if (n < 0) {
             cerr << "Error writing to socket." << endl;

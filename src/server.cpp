@@ -24,7 +24,7 @@ static int sockfdA;         // aggregator side socket
 
     @param: int s           // signal id int
 */
-static void sigHandler(int s){
+void sigHandler(int s){
     cout << "Caught signal " << s << " to exit" << endl;
     close(sockfdC);
     close(sockfdA);
@@ -38,7 +38,7 @@ static void sigHandler(int s){
 
     @param: int clientSockfd        // client socket
 */
-static void clientHandler(int clientSockfd)
+void clientHandler(int clientSockfd)
 {
     while (true) {
         char buffer[512];
