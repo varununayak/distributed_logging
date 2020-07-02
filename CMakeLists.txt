@@ -9,6 +9,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
 
 include_directories("include/")
-add_executable(server src/server.cpp)
-add_executable(client src/client.cpp)
-add_executable(aggregator src/aggregator.cpp)
+add_executable(server src/server.cpp src/network-utils.cpp)
+add_executable(client src/client.cpp src/network-utils.cpp)
+add_executable(aggregator src/aggregator.cpp src/network-utils.cpp)

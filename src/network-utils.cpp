@@ -1,6 +1,6 @@
 
 /*
-    utils.h
+    network-utls.cpp
 
     Networking and other helper functions for the distributed
     logging system. Mostly from IBM socket programming tutorials.
@@ -8,8 +8,6 @@
     @author: Varun Nayak
     @date: December 2019
  */
-#pragma once
-
 #include <iostream>
 #include <unistd.h>
 #include <chrono>
@@ -27,6 +25,7 @@
 #include <mutex>
 #include <fstream>
 #include <ctime>
+#include "network-utils.h"
 
 #define MAX_NUM_HANDLER_THREADS 4
 
@@ -62,7 +61,7 @@ bool connectToServer(int sockfd, int portNumber, struct hostent* server)
     return true;
 }
 
-void createSigHandler (void (*f)(int))
+void createSigHandler(void (*f)(int))
 {
     struct sigaction sigIntHandler;
     sigIntHandler.sa_handler = f;
