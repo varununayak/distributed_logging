@@ -14,6 +14,8 @@
 #include <sstream>
 #include <mutex>
 #include <fstream>
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 
 #include "thread-pool.h"
 #include "network-utils.h"
@@ -98,6 +100,7 @@ int main(int argc, char *argv[])
     createSigHandler(sigHandler);
 
     // We output logs to this file
+    fs::create_directories("../logs");
     outputfile.open("../logs/logs" + currentDateTime() + ".txt");
 
     int serverSockfd;
