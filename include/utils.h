@@ -19,3 +19,5 @@
     @return: string buf     // date and time string
 */
 const std::string currentDateTime();
+
+void createSigHandler(void (*f)(int));

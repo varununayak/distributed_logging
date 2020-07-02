@@ -18,7 +18,6 @@
 #include <netdb.h>
 #include <string>
 #include <arpa/inet.h>
-#include <signal.h>
 #include <thread>
 #include <pthread.h>
 #include <sstream>
@@ -59,13 +58,4 @@ bool connectToServer(int sockfd, int portNumber, struct hostent* server)
         return false;
     }
     return true;
-}
-
-void createSigHandler(void (*f)(int))
-{
-    struct sigaction sigIntHandler;
-    sigIntHandler.sa_handler = f;
-    sigemptyset(&sigIntHandler.sa_mask);
-    sigIntHandler.sa_flags = 0;
-    sigaction(SIGINT, &sigIntHandler, NULL);
 }

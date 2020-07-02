@@ -7,6 +7,7 @@
     @author: Varun Nayak
     @date: December 2019
  */
+#include <signal.h>
 #include "utils.h"
 
 using namespace std;
@@ -19,4 +20,13 @@ const string currentDateTime()
     tstruct = *localtime(&now);
     strftime(buf, sizeof(buf), "%Y-%m-%d | %X", &tstruct);
     return buf;
+}
+
+void createSigHandler(void (*f)(int))
+{
+    struct sigaction sigIntHandler;
+    sigIntHandler.sa_handler = f;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+    sigaction(SIGINT, &sigIntHandler, NULL);
 }
