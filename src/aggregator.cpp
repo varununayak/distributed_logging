@@ -28,30 +28,13 @@
 
 #include "thread-pool.h"
 #include "network-utils.h"
+#include "utils.h"
 
 using namespace std;
 
 static mutex outputFileLock;        // thread safety for output file
 static int sockfd;                  // socket   
 static ofstream outputfile;         // file to which we output logs
-
-/*  currentDateTime()
-
-    This function returns a string representing
-    the current date and time in a specific 
-    format.
-
-    @return: string buf     // date and time string
-*/
-const string currentDateTime()
-{
-    time_t now = time(0);
-    struct tm tstruct;
-    char buf[80];
-    tstruct = *localtime(&now);
-    strftime(buf, sizeof(buf), "%Y-%m-%d-%X", &tstruct);
-    return buf;
-}
 
 /* sigHandler
 

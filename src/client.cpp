@@ -27,6 +27,7 @@
 
 #include "thread-pool.h"
 #include "network-utils.h"
+#include "utils.h"
 
 #define NUM_WORKER_THREADS 3
 
@@ -34,24 +35,6 @@ using namespace std;
 
 static mutex socketLock;    // for thread safety on socket
 static int sockfd;
-
-/*  currentDateTime()
-
-    This function returns a string representing
-    the current date and time in a specific 
-    format.
-
-    @return: string buf     // date and time string
-*/
-const string currentDateTime()
-{
-    time_t now = time(0);
-    struct tm tstruct;
-    char buf[80];
-    tstruct = *localtime(&now);
-    strftime(buf, sizeof(buf), "%Y-%m-%d | %X", &tstruct);
-    return buf;
-}
 
 /* sigHandler
 
